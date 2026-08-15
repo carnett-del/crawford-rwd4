@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crawford County RWD 4 — Utility Portal (Demo)</title>
+<meta name="description" content="Concept demo: online meter readings, monthly billing, and customer bill payment for Crawford County Rural Water District No. 4.">
+<meta property="og:title" content="Crawford County RWD 4 — Utility Portal Concept">
+<meta property="og:description" content="A working demo of online meter readings, automatic billing, and customer bill pay for the district. All sample data.">
+<meta property="og:type" content="website">
+<style>
+  :root {
+    --blue: #1a5276; --blue-dark: #123a54; --teal: #1f7a6d;
+    --bg: #f4f6f8; --card: #ffffff; --line: #dde3e8;
+    --ink: #22303a; --muted: #64748b;
+    --green: #1e7e46; --green-bg: #e8f5ee;
+    --red: #b03a2e; --red-bg: #fdecea;
+    --amber: #92600a; --amber-bg: #fdf3e0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--ink); font-size: 15px; }
+  header { background: var(--blue); color: #fff; padding: 14px 20px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  header h1 { font-size: 18px; font-weight: 600; }
+  header .sub { font-size: 12.5px; opacity: .85; }
+  .spacer { flex: 1; }
+  .viewtoggle { display: flex; border: 1px solid rgba(255,255,255,.45); border-radius: 8px; overflow: hidden; }
+  .viewtoggle button { background: transparent; color: #fff; border: 0; padding: 8px 16px; font-size: 14px; cursor: pointer; }
+  .viewtoggle button.active { background: #fff; color: var(--blue); font-weight: 600; }
+  .demobar { background: var(--amber-bg); color: var(--amber); font-size: 13px; padding: 7px 20px; border-bottom: 1px solid #f0dfc0; }
+  nav.tabs { display: flex; gap: 4px; padding: 10px 20px 0; background: var(--card); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  nav.tabs button { border: 0; background: transparent; padding: 10px 14px; font-size: 14.5px; color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent; }
+  nav.tabs button.active { color: var(--blue); border-bottom-color: var(--blue); font-weight: 600; }
+  main { max-width: 1080px; margin: 0 auto; padding: 22px 20px 60px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 22px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; }
+  .card .label { font-size: 12.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
+  .card .big { font-size: 26px; font-weight: 650; }
+  .card .note { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; margin-bottom: 20px; }
+  .panel h2 { font-size: 16px; margin-bottom: 4px; }
+  .panel .hint { font-size: 13px; color: var(--muted); margin-bottom: 14px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); padding: 8px 10px; border-bottom: 2px solid var(--line); }
+  td { padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  tr:last-child td { border-bottom: 0; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .tablewrap { overflow-x: auto; }
+  input[type=number], input[type=text], select { padding: 7px 9px; border: 1px solid #c3ccd4; border-radius: 7px; font-size: 14px; width: 120px; background: #fff; color: var(--ink); }
+  input:focus, select:focus { outline: 2px solid #9cc3dd; border-color: var(--blue); }
+  select { width: auto; }
+  .btn { background: var(--blue); color: #fff; border: 0; border-radius: 8px; padding: 9px 16px; font-size: 14px; cursor: pointer; }
+  .btn:hover { background: var(--blue-dark); }
+  .btn.secondary { background: #fff; color: var(--blue); border: 1px solid var(--blue); }
+  .btn.secondary:hover { background: #eef4f8; }
+  .btn.green { background: var(--green); }
+  .btn.small { padding: 6px 12px; font-size: 13px; }
+  .pill { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 12.5px; font-weight: 600; }
+  .pill.paid { background: var(--green-bg); color: var(--green); }
+  .pill.due { background: var(--amber-bg); color: var(--amber); }
+  .pill.late { background: var(--red-bg); color: var(--red); }
+  .pill.pending { background: #e8eef4; color: var(--blue); }
+  .usage-flag { color: var(--red); font-size: 12.5px; font-weight: 600; }
+  .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+  .msg { padding: 10px 14px; border-radius: 8px; font-size: 14px; margin-bottom: 14px; display: none; }
+  .msg.ok { background: var(--green-bg); color: var(--green); display: block; }
+  .msg.warn { background: var(--amber-bg); color: var(--amber); display: block; }
+  .portal-balance { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .portal-balance .amt { font-size: 34px; font-weight: 700; }
+  .chart { display: flex; align-items: flex-end; gap: 6px; height: 140px; padding-top: 10px; }
+  .chart .bar { flex: 1; background: #a9c6da; border-radius: 4px 4px 0 0; min-width: 14px; position: relative; }
+  .chart .bar.current { background: var(--blue); }
+  .chart .bar span { position: absolute; top: -18px; left: 0; right: 0; text-align: center; font-size: 10.5px; color: var(--muted); }
+  .chart-labels { display: flex; gap: 6px; margin-top: 6px; }
+  .chart-labels div { flex: 1; text-align: center; font-size: 10.5px; color: var(--muted); min-width: 14px; }
+  dialog { border: 0; border-radius: 12px; padding: 24px; max-width: 420px; width: 92%; box-shadow: 0 10px 40px rgba(0,0,0,.25); }
+  dialog::backdrop { background: rgba(20,30,40,.45); }
+  dialog h3 { margin-bottom: 12px; font-size: 17px; }
+  dialog.intro { max-width: 520px; }
+  dialog.intro ul { margin: 0 0 12px 18px; font-size: 14px; color: var(--ink); line-height: 1.65; }
+  dialog.intro li { margin-bottom: 4px; }
+  .demobar a { color: var(--amber); font-weight: 600; }
+  .linkbtn { background: none; border: 0; color: var(--muted); font-size: 12.5px; text-decoration: underline; cursor: pointer; }
+  dialog p { font-size: 14px; color: var(--muted); margin-bottom: 12px; line-height: 1.5; }
+  .payrow { display: flex; justify-content: space-between; font-size: 14.5px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .payrow:last-of-type { border-bottom: 0; }
+  .dialog-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+  footer { text-align: center; color: var(--muted); font-size: 12.5px; padding: 20px; }
+  @media (max-width: 640px) { header h1 { font-size: 16px; } main { padding: 16px 12px 50px; } }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Crawford County Rural Water District No. 4</h1>
+    <div class="sub">Utility Billing &amp; Customer Portal</div>
+  </div>
+  <div class="spacer"></div>
+  <div class="viewtoggle">
+    <button id="btnStaff" class="active" onclick="setView('staff')">Staff</button>
+    <button id="btnCustomer" onclick="setView('customer')">Customer Portal</button>
+  </div>
+</header>
+<div class="demobar">Demonstration only — all names, readings, and payments are sample data. No real transactions are processed. <a href="#" onclick="showIntro();return false">About this demo</a></div>
+
+<nav class="tabs" id="staffTabs">
+  <button data-tab="dashboard" class="active" onclick="setTab('dashboard')">Dashboard</button>
+  <button data-tab="readings" onclick="setTab('readings')">Meter Readings</button>
+  <button data-tab="billing" onclick="setTab('billing')">Billing</button>
+  <button data-tab="customers" onclick="setTab('customers')">Customers</button>
+</nav>
+
+<main id="app"></main>
+<footer>Crawford County RWD 4 demo portal &middot; built as a working concept &middot; data stored locally in this browser &middot; <button class="linkbtn" onclick="resetDemo()">Reset demo data</button></footer>
+
+<dialog id="payDialog"></dialog>
+<dialog id="introDialog" class="intro">
+  <h3>An online utility portal concept for Crawford County RWD&nbsp;4</h3>
+  <p>This working demo shows how the district could handle <strong>meter readings, monthly billing, and customer payments</strong> in one simple system — in the office, in the field on a phone, or by customers at home.</p>
+  <ul>
+    <li><strong>Meter readings</strong> — entered by route; usage calculates automatically and unusually high use is flagged (a possible leak) before it becomes a big bill.</li>
+    <li><strong>Billing</strong> — a month's bills generate in one click from the district's rate structure, with paid, due, and past-due tracking and CSV export for the bookkeeper and annual audit.</li>
+    <li><strong>Customers</strong> — see their own usage history, submit a meter reading, and pay their bill online, which means fewer late accounts and fewer calls to the office.</li>
+  </ul>
+  <p>Everything here is <strong>sample data</strong> — no real accounts, no real payments. Try it yourself: start on the Staff dashboard, then switch to the <strong>Customer Portal</strong> (top right) and pay a bill.</p>
+  <div class="dialog-actions">
+    <button class="btn" onclick="closeIntro()">Explore the demo</button>
+  </div>
+</dialog>
+
+<script>
+'use strict';
+// ---------- Config ----------
+const RATE = { base: 45.00, includedGal: 1000, perThousand: 10.50, lateFee: 10.00 };
+const LS_KEY = 'rwd4-demo-v1';
+const now = new Date();
+const CUR_MONTH = now.toISOString().slice(0, 7);
+
+function monthKey(offset) { const d = new Date(now.getFullYear(), now.getMonth() + offset, 1); return d.toISOString().slice(0, 7); }
+function monthLabel(key, short) { const [y, m] = key.split('-'); const d = new Date(+y, +m - 1, 1); return d.toLocaleDateString('en-US', short ? { month: 'short' } : { month: 'long', year: 'numeric' }); }
+const money = n => '$' + n.toFixed(2);
+const gal = n => n.toLocaleString() + ' gal';
+
+// ---------- Demo data ----------
+const NAMES = [
+  ['Miller Farm Trust', '1420 S 120th St, Girard'], ['Dale & Karen Osborn', '890 E 540th Ave, Pittsburg'],
+  ['J. Ramirez', '515 W 530th Ave, Cherokee'], ['Whitfield Cattle Co.', '2210 S 140th St, Girard'],
+  ['Emma Toland', '310 N 160th St, Girard'], ['Brett & Amy Coulson', '775 E 560th Ave, Pittsburg'],
+  ['Harold Jenks', '1180 S 110th St, Cherokee'], ['Prairie View Church', '640 W 520th Ave, Cherokee'],
+  ['S. & M. Dubinski', '425 E 550th Ave, Pittsburg'], ['Tina Marsh', '980 S 130th St, Girard'],
+  ['Roy Applegate', '1510 E 570th Ave, Pittsburg'], ['K. Nguyen', '220 W 540th Ave, Cherokee'],
+];
+function hash(s) { let h = 0; for (const c of s) { h = (h * 31 + c.charCodeAt(0)) >>> 0; } return h; }
+
+function seedData() {
+  const customers = NAMES.map(([name, address], i) => ({
+    id: i + 1, name, address,
+    meter: 'M-4' + String(1001 + i * 7),
+    route: i < 6 ? 'Route A' : 'Route B',
+    phone: '620-72' + (4000 + hash(name) % 999),
+    autopay: i % 5 === 0,
+  }));
+  // readings[custId] = { 'YYYY-MM': {value, source} } — cumulative meter values
+  const readings = {}; const bills = [];
+  for (const c of customers) {
+    readings[c.id] = {};
+    let meterVal = 100000 + (hash(c.name) % 400000);
+    const baseUse = 2500 + (hash(c.name) % 5500); // typical monthly gallons
+    for (let off = -12; off <= 0; off++) {
+      const mk = monthKey(off);
+      const mNum = +mk.split('-')[1];
+      const seasonal = (mNum >= 6 && mNum <= 9) ? 1.45 : (mNum <= 2 || mNum === 12) ? 0.85 : 1.0;
+      const wobble = 0.8 + ((hash(c.name + mk) % 40) / 100);
+      const use = Math.round(baseUse * seasonal * wobble / 10) * 10;
+      meterVal += use;
+      if (off < 0) {
+        readings[c.id][mk] = { value: meterVal, source: 'staff' };
+        if (off >= -11) {
+          const amount = calcBill(use);
+          const isLate = (off === -1 && (c.id === 3 || c.id === 7)); // two delinquents
+          bills.push({ id: bills.length + 1, custId: c.id, month: mk, usage: use, amount,
+            status: isLate ? 'late' : 'paid',
+            paidDate: isLate ? null : mk + '-15', method: isLate ? null : (c.autopay ? 'Auto-pay' : ['Check', 'Cash', 'Online'][hash(c.name + mk) % 3]) });
+        }
+      } else if (c.id <= 4) {
+        // current month: first few already read
+        readings[c.id][mk] = { value: meterVal, source: 'staff' };
+      }
+    }
+  }
+  return { customers, readings, bills, nextBillId: bills.length + 1 };
+}
+function calcBill(usage) {
+  const extra = Math.max(0, usage - RATE.includedGal);
+  return RATE.base + (extra / 1000) * RATE.perThousand;
+}
+let state = null;
+try { state = JSON.parse(localStorage.getItem(LS_KEY)); } catch (e) {}
+if (!state || !state.customers) { state = seedData(); save(); }
+function save() { localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+
+// ---------- Helpers ----------
+function prevReading(custId) {
+  const months = Object.keys(state.readings[custId]).filter(m => m < CUR_MONTH).sort();
+  const last = months[months.length - 1];
+  return last ? state.readings[custId][last].value : null;
+}
+function curReading(custId) { return (state.readings[custId] || {})[CUR_MONTH] || null; }
+function avgUsage(custId) {
+  const months = Object.keys(state.readings[custId]).sort();
+  let total = 0, n = 0;
+  for (let i = 1; i < months.length; i++) {
+    if (months[i] >= CUR_MONTH) continue;
+    total += state.readings[custId][months[i]].value - state.readings[custId][months[i - 1]].value; n++;
+  }
+  return n ? total / n : 0;
+}
+function usageHistory(custId, count) {
+  const out = [];
+  const months = Object.keys(state.readings[custId]).sort();
+  for (let i = 1; i < months.length; i++) {
+    out.push({ month: months[i], use: state.readings[custId][months[i]].value - state.readings[custId][months[i - 1]].value });
+  }
+  return out.slice(-count);
+}
+function openBills(custId) { return state.bills.filter(b => b.custId === custId && (b.status === 'due' || b.status === 'late')); }
+function balance(custId) { return openBills(custId).reduce((s, b) => s + b.amount + (b.status === 'late' ? RATE.lateFee : 0), 0); }
+
+// ---------- View state ----------
+let view = 'staff', tab = 'dashboard', portalCustId = 2, custFilter = '';
+
+function setView(v) {
+  view = v;
+  document.getElementById('btnStaff').classList.toggle('active', v === 'staff');
+  document.getElementById('btnCustomer').classList.toggle('active', v === 'customer');
+  document.getElementById('staffTabs').style.display = v === 'staff' ? 'flex' : 'none';
+  render();
+}
+function setTab(t) {
+  tab = t;
+  document.querySelectorAll('#staffTabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === t));
+  render();
+}
+
+// ---------- Render ----------
+function render() {
+  const el = document.getElementById('app');
+  if (view === 'customer') { el.innerHTML = renderPortal(); drawNothing(); return; }
+  if (tab === 'dashboard') el.innerHTML = renderDashboard();
+  else if (tab === 'readings') el.innerHTML = renderReadings();
+  else if (tab === 'billing') el.innerHTML = renderBilling();
+  else if (tab === 'customers') el.innerHTML = renderCustomers();
+}
+function drawNothing() {}
+
+function renderDashboard() {
+  const total = state.customers.length;
+  const read = state.customers.filter(c => curReading(c.id)).length;
+  const dueBills = state.bills.filter(b => b.status === 'due');
+  const lateBills = state.bills.filter(b => b.status === 'late');
+  const outstanding = dueBills.concat(lateBills).reduce((s, b) => s + b.amount + (b.status === 'late' ? RATE.lateFee : 0), 0);
+  const paidThisMonth = state.bills.filter(b => b.status === 'paid' && b.paidDate && b.paidDate.startsWith(CUR_MONTH)).reduce((s, b) => s + b.amount, 0);
+  const pendingCust = state.customers.filter(c => { const r = curReading(c.id); return r && r.source === 'customer'; });
+  return `
+    <div class="cards">
+      <div class="card"><div class="label">Active accounts</div><div class="big">${total}</div><div class="note">demo sample — district serves ~800</div></div>
+      <div class="card"><div class="label">${monthLabel(CUR_MONTH)} readings</div><div class="big">${read} / ${total}</div><div class="note">${total - read} remaining</div></div>
+      <div class="card"><div class="label">Outstanding balances</div><div class="big">${money(outstanding)}</div><div class="note">${lateBills.length} past-due account${lateBills.length === 1 ? '' : 's'}</div></div>
+      <div class="card"><div class="label">Payments received (this month)</div><div class="big">${money(paidThisMonth)}</div><div class="note">all methods</div></div>
+    </div>
+    ${pendingCust.length ? `<div class="panel"><h2>Customer-submitted readings to verify</h2><div class="hint">These readings were entered by customers through the portal. Review before billing.</div>
+      <div class="tablewrap"><table><tr><th>Account</th><th>Meter</th><th class="num">Reading</th><th class="num">Usage</th></tr>
+      ${pendingCust.map(c => { const r = curReading(c.id); const p = prevReading(c.id); return `<tr><td>${c.name}</td><td>${c.meter}</td><td class="num">${r.value.toLocaleString()}</td><td class="num">${gal(r.value - p)}</td></tr>`; }).join('')}
+      </table></div></div>` : ''}
+    <div class="panel"><h2>Past-due accounts</h2><div class="hint">Late fee of ${money(RATE.lateFee)} applies per district policy.</div>
+      ${lateBills.length ? `<div class="tablewrap"><table><tr><th>Account</th><th>Bill month</th><th class="num">Amount</th><th class="num">With late fee</th><th></th></tr>
+        ${lateBills.map(b => { const c = state.customers.find(x => x.id === b.custId); return `<tr><td>${c.name}<br><span style="color:var(--muted);font-size:12.5px">${c.phone}</span></td><td>${monthLabel(b.month)}</td><td class="num">${money(b.amount)}</td><td class="num">${money(b.amount + RATE.lateFee)}</td><td><span class="pill late">Past due</span></td></tr>`; }).join('')}
+      </table></div>` : '<p style="color:var(--muted)">No past-due accounts. 🎉</p>'}
+    </div>
+    <div class="panel"><h2>Current rate structure</h2>
+      <div class="tablewrap"><table>
+        <tr><td>Minimum bill (includes first ${RATE.includedGal.toLocaleString()} gallons)</td><td class="num">${money(RATE.base)}</td></tr>
+        <tr><td>Each additional 1,000 gallons</td><td class="num">${money(RATE.perThousand)}</td></tr>
+        <tr><td>Late payment fee</td><td class="num">${money(RATE.lateFee)}</td></tr>
+      </table></div>
+    </div>`;
+}
+
+function renderReadings() {
+  const routes = ['Route A', 'Route B'];
+  return `
+    <div class="panel">
+      <h2>Meter readings — ${monthLabel(CUR_MONTH)}</h2>
+      <div class="hint">Enter current meter values in route order. Usage is calculated automatically; unusually high usage (over 2× the account's average) is flagged so you can catch leaks or misreads. Works on a phone in the field.</div>
+      <div id="readMsg" class="msg"></div>
+      ${routes.map(rt => `
+        <h3 style="font-size:14px;margin:14px 0 8px;color:var(--muted)">${rt}</h3>
+        <div class="tablewrap"><table>
+          <tr><th>Account</th><th>Meter</th><th class="num">Previous</th><th class="num">Current</th><th class="num">Usage</th><th></th></tr>
+          ${state.customers.filter(c => c.route === rt).map(c => {
+            const prev = prevReading(c.id); const cur = curReading(c.id);
+            const use = cur ? cur.value - prev : null;
+            const high = use !== null && avgUsage(c.id) > 0 && use > avgUsage(c.id) * 2;
+            return `<tr>
+              <td>${c.name}</td><td>${c.meter}</td>
+              <td class="num">${prev.toLocaleString()}</td>
+              <td class="num"><input type="number" id="read-${c.id}" value="${cur ? cur.value : ''}" placeholder="—" min="${prev}"></td>
+              <td class="num" id="use-${c.id}">${use !== null ? gal(use) : '—'}</td>
+              <td>${cur ? (cur.source === 'customer' ? '<span class="pill pending">Customer-submitted</span>' : '<span class="pill paid">Recorded</span>') : ''} ${high ? '<span class="usage-flag">⚠ High</span>' : ''}</td>
+            </tr>`;
+          }).join('')}
+        </table></div>`).join('')}
+      <div class="row" style="margin-top:16px">
+        <button class="btn" onclick="saveReadings()">Save readings</button>
+        <button class="btn secondary" onclick="exportReadingsCSV()">Export CSV</button>
+      </div>
+    </div>`;
+}
+
+function saveReadings() {
+  let saved = 0, errors = [];
+  for (const c of state.customers) {
+    const input = document.getElementById('read-' + c.id);
+    if (!input || input.value === '') continue;
+    const val = parseInt(input.value, 10);
+    const prev = prevReading(c.id);
+    if (isNaN(val)) continue;
+    if (val < prev) { errors.push(c.name + ' (reading below previous)'); continue; }
+    const existing = curReading(c.id);
+    if (!existing || existing.value !== val || existing.source === 'customer') {
+      state.readings[c.id][CUR_MONTH] = { value: val, source: 'staff' };
+      saved++;
+    }
+  }
+  save();
+  render();
+  const msg = document.getElementById('readMsg');
+  if (errors.length) { msg.className = 'msg warn'; msg.textContent = 'Not saved: ' + errors.join(', ') + '. Saved ' + saved + ' other reading(s).'; }
+  else { msg.className = 'msg ok'; msg.textContent = saved + ' reading(s) saved.'; }
+}
+
+function exportReadingsCSV() {
+  let csv = 'Account,Meter,Route,Previous,Current,Usage (gal)\n';
+  for (const c of state.customers) {
+    const prev = prevReading(c.id); const cur = curReading(c.id);
+    csv += `"${c.name}",${c.meter},${c.route},${prev},${cur ? cur.value : ''},${cur ? cur.value - prev : ''}\n`;
+  }
+  downloadCSV(csv, `rwd4-readings-${CUR_MONTH}.csv`);
+}
+function downloadCSV(text, name) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type: 'text/csv' }));
+  a.download = name; a.click();
+}
+
+function renderBilling() {
+  const readCount = state.customers.filter(c => curReading(c.id)).length;
+  const alreadyBilled = state.bills.some(b => b.month === CUR_MONTH);
+  const recent = state.bills.slice().sort((a, b) => b.month.localeCompare(a.month) || a.custId - b.custId).slice(0, 40);
+  return `
+    <div class="panel">
+      <h2>Generate bills — ${monthLabel(CUR_MONTH)}</h2>
+      <div class="hint">${readCount} of ${state.customers.length} meters read. Bills are calculated from the rate structure: ${money(RATE.base)} minimum (first ${RATE.includedGal.toLocaleString()} gal) + ${money(RATE.perThousand)} per additional 1,000 gal.</div>
+      <div id="billMsg" class="msg"></div>
+      <div class="row">
+        <button class="btn" onclick="generateBills()" ${alreadyBilled ? 'disabled style="opacity:.5"' : ''}>${alreadyBilled ? 'Bills generated for this month' : 'Generate bills for accounts with readings'}</button>
+        <button class="btn secondary" onclick="exportBillsCSV()">Export billing CSV</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Recent bills</h2>
+      <div class="tablewrap"><table>
+        <tr><th>Account</th><th>Month</th><th class="num">Usage</th><th class="num">Amount</th><th>Status</th><th>Paid via</th><th></th></tr>
+        ${recent.map(b => {
+          const c = state.customers.find(x => x.id === b.custId);
+          return `<tr><td>${c.name}</td><td>${monthLabel(b.month)}</td><td class="num">${gal(b.usage)}</td>
+            <td class="num">${money(b.amount + (b.status === 'late' ? RATE.lateFee : 0))}</td>
+            <td><span class="pill ${b.status}">${b.status === 'late' ? 'Past due' : b.status === 'due' ? 'Due' : 'Paid'}</span></td>
+            <td>${b.method || '—'}</td>
+            <td>${b.status !== 'paid' ? `<button class="btn small secondary" onclick="markPaid(${b.id})">Record payment</button>` : ''}</td></tr>`;
+        }).join('')}
+      </table></div>
+    </div>`;
+}
+
+function generateBills() {
+  let n = 0;
+  for (const c of state.customers) {
+    const cur = curReading(c.id);
+    if (!cur) continue;
+    if (state.bills.some(b => b.custId === c.id && b.month === CUR_MONTH)) continue;
+    const use = cur.value - prevReading(c.id);
+    state.bills.push({ id: state.nextBillId++, custId: c.id, month: CUR_MONTH, usage: use, amount: calcBill(use), status: 'due', paidDate: null, method: null });
+    n++;
+  }
+  save(); render();
+  const msg = document.getElementById('billMsg');
+  if (msg) { msg.className = 'msg ok'; msg.textContent = n + ' bill(s) generated.'; }
+}
+function markPaid(billId) {
+  const b = state.bills.find(x => x.id === billId);
+  if (!b) return;
+  if (b.status === 'late') b.amount += RATE.lateFee;
+  b.status = 'paid'; b.paidDate = new Date().toISOString().slice(0, 10); b.method = 'Office';
+  save(); render();
+}
+function exportBillsCSV() {
+  let csv = 'Account,Month,Usage (gal),Amount,Status,Paid Date,Method\n';
+  for (const b of state.bills) {
+    const c = state.customers.find(x => x.id === b.custId);
+    csv += `"${c.name}",${b.month},${b.usage},${b.amount.toFixed(2)},${b.status},${b.paidDate || ''},${b.method || ''}\n`;
+  }
+  downloadCSV(csv, 'rwd4-bills.csv');
+}
+
+function renderCustomers() {
+  const q = custFilter.toLowerCase();
+  const list = state.customers.filter(c => !q || c.name.toLowerCase().includes(q) || c.address.toLowerCase().includes(q) || c.meter.toLowerCase().includes(q));
+  return `
+    <div class="panel">
+      <h2>Customer accounts</h2>
+      <div class="row" style="margin-top:10px">
+        <input type="text" style="width:260px" placeholder="Search name, address, or meter…" value="${custFilter}" oninput="custFilter=this.value;render()">
+      </div>
+      <div class="tablewrap"><table>
+        <tr><th>Account</th><th>Address</th><th>Meter</th><th>Route</th><th>Phone</th><th class="num">Avg use</th><th class="num">Balance</th><th>Auto-pay</th></tr>
+        ${list.map(c => `<tr>
+          <td>${c.name}</td><td>${c.address}</td><td>${c.meter}</td><td>${c.route}</td><td>${c.phone}</td>
+          <td class="num">${gal(Math.round(avgUsage(c.id)))}</td>
+          <td class="num">${balance(c.id) > 0 ? '<strong style="color:var(--red)">' + money(balance(c.id)) + '</strong>' : money(0)}</td>
+          <td>${c.autopay ? '<span class="pill paid">On</span>' : '—'}</td>
+        </tr>`).join('')}
+      </table></div>
+    </div>`;
+}
+
+// ---------- Customer portal ----------
+function renderPortal() {
+  const c = state.customers.find(x => x.id === portalCustId);
+  const open = openBills(c.id);
+  const bal = balance(c.id);
+  const hist = usageHistory(c.id, 12);
+  const maxUse = Math.max(...hist.map(h => h.use), 1);
+  const paid = state.bills.filter(b => b.custId === c.id && b.status === 'paid').sort((a, b) => b.month.localeCompare(a.month)).slice(0, 6);
+  const prev = prevReading(c.id); const cur = curReading(c.id);
+  return `
+    <div class="panel">
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <h2>Welcome, ${c.name}</h2>
+          <div class="hint" style="margin-bottom:0">${c.address} &middot; Meter ${c.meter}</div>
+        </div>
+        <label style="font-size:13px;color:var(--muted)">Demo account:&nbsp;
+          <select onchange="portalCustId=+this.value;render()">
+            ${state.customers.map(x => `<option value="${x.id}" ${x.id === portalCustId ? 'selected' : ''}>${x.name}</option>`).join('')}
+          </select>
+        </label>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Account balance</h2>
+      <div class="portal-balance">
+        <span class="amt" style="color:${bal > 0 ? 'var(--red)' : 'var(--green)'}">${money(bal)}</span>
+        ${bal > 0 ? `<button class="btn green" onclick="openPayDialog()">Pay online</button>` : '<span class="pill paid">Paid in full — thank you!</span>'}
+      </div>
+      ${open.length ? `<div style="margin-top:14px">${open.map(b => `<div class="payrow"><span>${monthLabel(b.month)} — ${gal(b.usage)}${b.status === 'late' ? ' <span class="pill late">Past due</span>' : ''}</span><span>${money(b.amount + (b.status === 'late' ? RATE.lateFee : 0))}</span></div>`).join('')}</div>` : ''}
+      <div class="hint" style="margin-top:12px">${c.autopay ? 'Auto-pay is on for this account.' : 'Tip: enroll in auto-pay at the district office and never miss a due date.'}</div>
+    </div>
+    <div class="panel">
+      <h2>Water use — last 12 months</h2>
+      <div class="chart">
+        ${hist.map((h, i) => `<div class="bar ${h.month === monthKey(-1) ? 'current' : ''}" style="height:${Math.round(h.use / maxUse * 100)}%"><span>${(h.use / 1000).toFixed(1)}k</span></div>`).join('')}
+      </div>
+      <div class="chart-labels">${hist.map(h => `<div>${monthLabel(h.month, true)}</div>`).join('')}</div>
+      <div class="hint" style="margin-top:10px">Average ${gal(Math.round(avgUsage(c.id)))} per month. A sudden jump can mean a leak — call the district if something looks off.</div>
+    </div>
+    <div class="panel">
+      <h2>Submit your meter reading</h2>
+      <div class="hint">Read the numbers on your meter dial and enter them here. Your last recorded reading was <strong>${prev.toLocaleString()}</strong>. The office will verify before billing.</div>
+      <div id="portalMsg" class="msg"></div>
+      ${cur ? `<p style="font-size:14px">Reading for ${monthLabel(CUR_MONTH)} is on file: <strong>${cur.value.toLocaleString()}</strong> ${cur.source === 'customer' ? '(submitted by you, pending office review)' : ''}</p>` :
+      `<div class="row"><input type="number" id="portalReading" placeholder="Meter reading" min="${prev}"><button class="btn" onclick="submitPortalReading()">Submit</button></div>`}
+    </div>
+    <div class="panel">
+      <h2>Payment history</h2>
+      <div class="tablewrap"><table>
+        <tr><th>Month</th><th class="num">Usage</th><th class="num">Amount</th><th>Paid</th><th>Method</th></tr>
+        ${paid.map(b => `<tr><td>${monthLabel(b.month)}</td><td class="num">${gal(b.usage)}</td><td class="num">${money(b.amount)}</td><td>${b.paidDate}</td><td>${b.method}</td></tr>`).join('')}
+      </table></div>
+    </div>`;
+}
+
+function submitPortalReading() {
+  const input = document.getElementById('portalReading');
+  const val = parseInt(input.value, 10);
+  const prev = prevReading(portalCustId);
+  const msg = document.getElementById('portalMsg');
+  if (isNaN(val)) { msg.className = 'msg warn'; msg.textContent = 'Please enter your meter reading.'; return; }
+  if (val < prev) { msg.className = 'msg warn'; msg.textContent = 'That reading is lower than your last one (' + prev.toLocaleString() + '). Please double-check the dial.'; return; }
+  state.readings[portalCustId][CUR_MONTH] = { value: val, source: 'customer' };
+  save(); render();
+}
+
+function openPayDialog() {
+  const c = state.customers.find(x => x.id === portalCustId);
+  const open = openBills(c.id);
+  const bal = balance(c.id);
+  const dlg = document.getElementById('payDialog');
+  dlg.innerHTML = `
+    <h3>Pay your water bill</h3>
+    ${open.map(b => `<div class="payrow"><span>${monthLabel(b.month)}${b.status === 'late' ? ' (incl. late fee)' : ''}</span><span>${money(b.amount + (b.status === 'late' ? RATE.lateFee : 0))}</span></div>`).join('')}
+    <div class="payrow" style="font-weight:700"><span>Total</span><span>${money(bal)}</span></div>
+    <p style="margin-top:12px">In the live version this button opens a secure hosted checkout (card or bank draft). Card details are entered on the payment processor's page — never stored by the district.</p>
+    <div class="dialog-actions">
+      <button class="btn secondary" onclick="document.getElementById('payDialog').close()">Cancel</button>
+      <button class="btn green" onclick="simulatePayment()">Simulate payment (demo)</button>
+    </div>`;
+  dlg.showModal();
+}
+function simulatePayment() {
+  for (const b of openBills(portalCustId)) {
+    if (b.status === 'late') b.amount += RATE.lateFee;
+    b.status = 'paid'; b.paidDate = new Date().toISOString().slice(0, 10); b.method = 'Online';
+  }
+  save();
+  document.getElementById('payDialog').close();
+  render();
+}
+
+function showIntro() { document.getElementById('introDialog').showModal(); }
+function closeIntro() { localStorage.setItem('rwd4-intro-seen', '1'); document.getElementById('introDialog').close(); }
+function resetDemo() { localStorage.removeItem(LS_KEY); localStorage.removeItem('rwd4-intro-seen'); location.reload(); }
+
+render();
+if (!localStorage.getItem('rwd4-intro-seen')) showIntro();
+</script>
+</body>
+</html>
