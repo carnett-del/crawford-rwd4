@@ -226,7 +226,10 @@ function openBills(custId) { return state.bills.filter(b => b.custId === custId 
 function balance(custId) { return openBills(custId).reduce((s, b) => s + b.amount + (b.status === 'late' ? RATE.lateFee : 0), 0); }
 
 // ---------- View state ----------
-let view = 'staff', tab = 'dashboard', portalCustId = 2, custFilter = '';
+let view = 'staff', tab = 'dashboard', custFilter = '';
+// open the portal on a customer with an outstanding balance so the
+// "Pay online" flow is visible immediately
+let portalCustId = (state.customers.find(c => balance(c.id) > 0) || state.customers[0]).id;
 
 function setView(v) {
   view = v;
